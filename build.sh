@@ -20,3 +20,8 @@ echo "== Repackeando initramfs =="
 cd "$ROOTFS"
 find . | cpio -o -H newc --owner root:root | gzip > "$INITRAMFS"
 echo "OK: initramfs actualizado"
+
+echo "== Compilando can_reader =="
+cd "$HERE/src"
+aarch64-linux-gnu-gcc -static can_reader.c -o can_reader
+cp can_reader "$ROOTFS/root/"
