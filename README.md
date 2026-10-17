@@ -35,3 +35,8 @@ ip link set up vcan0
 - **Week 1, day 1** — virtual CAN bus (vcan) working end-to-end: kernel CAN
   core/CAN_DEV/CAN_VCAN enabled, can-utils cross-compiled statically, frames
   sent and received via candump/cansend, verified in QEMU.
+
+- **Week 1, day 2** — custom SocketCAN reader (`can_reader.c`) in C, verified
+  against `cansend`.
+- **Week 1, day 3** — custom SocketCAN sender (`can_sender.c`) in C. Full
+  send/receive loop verified using only custom code, no `can-utils`.
