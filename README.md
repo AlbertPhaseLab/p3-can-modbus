@@ -40,3 +40,8 @@ ip link set up vcan0
   against `cansend`.
 - **Week 1, day 3** — custom SocketCAN sender (`can_sender.c`) in C. Full
   send/receive loop verified using only custom code, no `can-utils`.
+
+- **Week 2, day 1** — Modbus TCP slave (`modbus_slave.c`, built on libmodbus,
+  cross-compiled statically) running in QEMU. Reached from the host through
+  QEMU port forwarding (`run-modbus.sh`: host 5020 -> guest 502), verified
+  with `mbpoll` (read and write of a holding register).
