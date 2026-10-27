@@ -16,6 +16,7 @@ The end goal is a gateway process that translates between both worlds: CAN telem
 | `src/can_sender.c` | SocketCAN sender: builds and transmits a frame from the command line |
 | `src/modbus_slave.c` | Modbus TCP slave (the simulated MCU): 16 holding registers, register 0 preloaded with `1234` |
 | `src/modbus_master.c` | Modbus TCP master (client): reads and writes holding registers |
+| `src/gateway.c` | Gateway: single-threaded `poll()` loop that copies CAN telemetry (ID `0x100`) into Modbus holding registers 0-3 |
 | `rootfs-extra/p3-setup.sh` | Per-boot setup script run inside the VM (loopback, `eth0`, CAN modules, `vcan0`) |
 
 ## Prerequisites
@@ -104,6 +105,7 @@ The slave keeps its register table in process memory, so values written by one c
 - **Week 1, day 3** — custom SocketCAN sender (`can_sender.c`) in C. Full send/receive loop verified using only custom code, no `can-utils`.
 - **Week 2, day 1** — Modbus TCP slave (`modbus_slave.c`, built on libmodbus, cross-compiled statically) running in QEMU. Reached from the host through QEMU port forwarding (`run-modbus.sh`: host 5020 -> guest 502), verified with `mbpoll` (read and write of a holding register).
 - **Week 2, day 2** — Modbus TCP master (`modbus_master.c`) in C, verified against the custom slave over loopback inside QEMU (read, write, read-back, state persisting across connections). `build.sh` reorganised so every custom program is compiled before the initramfs is repacked. `rootfs-extra/p3-setup.sh` added to automate per-boot setup.
+- **Week 3, day 1** — `gateway.c`: single-threaded `poll()` loop serving a CAN socket and the Modbus slave at once. CAN telemetry (ID `0x100`) is copied into holding registers 0-3 (big-endian); verified in QEMU with `cansend`/`cangen` and `modbus_master`.
 
 ## Roadmap
 

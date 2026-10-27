@@ -20,7 +20,7 @@ for p in can_reader can_sender; do
   aarch64-linux-gnu-gcc -static "$p.c" -o "$p"
   cp "$p" "$ROOTFS/root/"
 done
-for p in modbus_slave modbus_master; do
+for p in modbus_slave modbus_master gateway; do
   aarch64-linux-gnu-gcc -static "$p.c" -o "$p" \
     -I"$MODBUS_PREFIX/include/modbus" -L"$MODBUS_PREFIX/lib" -lmodbus
   cp "$p" "$ROOTFS/root/"
