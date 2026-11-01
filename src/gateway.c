@@ -13,8 +13,10 @@
 #include <modbus.h>
 
 #define CAN_ID_TELEMETRY 0x100
+#define CAN_ID_COMMAND   0x200
 #define NUM_REGISTERS    16
 #define TELEMETRY_REGS   4
+#define REG_COMMAND      8
 
 static int open_can(const char *ifname)
 {
@@ -61,6 +63,39 @@ static void handle_can_frame(const struct can_frame *f, modbus_mapping_t *map)
            f->can_id,
            map->tab_registers[0], map->tab_registers[1],
            map->tab_registers[2], map->tab_registers[3]);
+    fflush(stdout);
+}
+
+/* Mira la peticion Modbus ANTES de responder: ¿escribe en el registro de comando? */
+static int command_register_written(const uint8_t *q, int hl)
+{
+    uint8_t fc = q[hl];
+    uint16_t addr = ((uint16_t)q[hl + 1] << 8) | q[hl + 2];
+
+    if (fc == MODBUS_FC_WRITE_SINGLE_REGISTER)
+        return addr == REG_COMMAND;
+
+    if (fc == MODBUS_FC_WRITE_MULTIPLE_REGISTERS) {
+        uint16_t count = ((uint16_t)q[hl + 3] << 8) | q[hl + 4];
+        return REG_COMMAND >= addr && REG_COMMAND < addr + count;
+    }
+    return 0;
+}
+
+/* Comando: valor del registro 8 -> trama 0x200 de 2 bytes, big-endian */
+static void send_command(int can_fd, uint16_t value)
+{
+    struct can_frame f;
+    memset(&f, 0, sizeof(f));
+    f.can_id = CAN_ID_COMMAND;
+    f.can_dlc = 2;
+    f.data[0] = value >> 8;
+    f.data[1] = value & 0xFF;
+
+    if (write(can_fd, &f, sizeof(f)) != (ssize_t)sizeof(f))
+        perror("write CAN");
+    else
+        printf("Modbus reg %d = %04X -> CAN 0x%03X\n", REG_COMMAND, value, CAN_ID_COMMAND);
     fflush(stdout);
 }
 
@@ -131,7 +166,13 @@ int main(int argc, char *argv[])
             } else {
                 int rc = modbus_receive(ctx, query);
                 if (rc > 0) {
+                    int hl = modbus_get_header_length(ctx);
+                    int is_cmd = command_register_written(query, hl);
+
                     modbus_reply(ctx, query, rc, map);
+
+                    if (is_cmd)
+                        send_command(can_fd, map->tab_registers[REG_COMMAND]);
                 } else if (rc == -1) {
                     modbus_close(ctx);
                     client_fd = -1;
