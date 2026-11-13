@@ -5,3 +5,4 @@
 *.symvers
 *.order
 .*.cmd
+demos/race_demo
